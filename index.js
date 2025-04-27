@@ -63,7 +63,7 @@ client.on('messageCreate', async (message) => {
 \`?removewarn @user warnNumber\` - Remove a specific warn
 \`?warns @user\` - View a user's warns
 \`?blacklist @user reason\` - Blacklist a user
-\`?whitelist @user\` - Remove blacklist
+\`?whitelist @user reason\` - Remove blacklist
 \`?mute @user time reason\` - Mute a user for a time
 \`?unmute @user\` - Unmute a user
         `;
@@ -82,7 +82,16 @@ client.on('messageCreate', async (message) => {
         const warnCount = userWarns.length;
 
         await message.reply(`${user} has been warned. Total warns: ${warnCount}`);
-        await user.send(`You have been warned in ${message.guild.name} for: ${reason}\nTotal warnings: ${warnCount}`);
+        await user.send(`
+━━━━━━━〔 WARN NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: ${reason}
+Warn Number: ${warnCount}
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Mute ID: #WARN-${warnCount}
+This is an automated warning by Halal Bot.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `);
 
         // Punishment system based on warns
         if (warnCount === 1) {
@@ -90,7 +99,16 @@ client.on('messageCreate', async (message) => {
         } else if (warnCount === 2) {
             await user.roles.add(mutedRoleId);
             await message.channel.send(`⚠️ ${user} now has **2 warnings** and has been muted for **30 minutes**.`);
-            await user.send(`You have been muted for 30 minutes due to accumulating 2 warnings.`);
+            await user.send(`
+━━━━━━━〔 MUTE NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: Accumulated 2 warnings
+Mute Ends: ${new Date(Date.now() + ms('30m')).toLocaleString()}
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Mute ID: #MUTE-5821
+This is an automated mute by Halal Bot.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            `);
             setTimeout(async () => {
                 if (user.roles.cache.has(mutedRoleId)) {
                     await user.roles.remove(mutedRoleId).catch(() => {});
@@ -99,8 +117,17 @@ client.on('messageCreate', async (message) => {
             }, ms('30m'));
         } else if (warnCount === 3) {
             await user.roles.add(mutedRoleId);
-            await message.channel.send(`⚠️ ${user} now has **3 warnings** and has been muted for **1 hour**. Messages may be cleaned up.`);
-            await user.send(`You have been muted for 1 hour due to accumulating 3 warnings.`);
+            await message.channel.send(`⚠️ ${user} now has **3 warnings** and has been muted for **1 hour**.`);
+            await user.send(`
+━━━━━━━〔 MUTE NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: Accumulated 3 warnings
+Mute Ends: ${new Date(Date.now() + ms('1h')).toLocaleString()}
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Mute ID: #MUTE-5822
+This is an automated mute by Halal Bot.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            `);
             setTimeout(async () => {
                 if (user.roles.cache.has(mutedRoleId)) {
                     await user.roles.remove(mutedRoleId).catch(() => {});
@@ -114,10 +141,17 @@ client.on('messageCreate', async (message) => {
             await user.ban({ reason: '5 warnings reached - Banned by bot' });
             await message.channel.send(`⚠️ ${user.user.tag} has been permanently banned after receiving 5 warnings.`);
         } else if (warnCount >= 6) {
-            // Additional punishment: Blacklist/IP Ban simulation
             await user.roles.add(blacklistRoleId);
             await message.channel.send(`⚠️ ${user.user.tag} has been blacklisted due to 6 or more warnings.`);
-            await user.send(`You have been blacklisted in ${message.guild.name} due to repeated offenses.`);
+            await user.send(`
+━━━━━━━〔 BLACKLIST NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: Repeated offenses (6+ warnings)
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Blacklist ID: #BLACKLIST-5823
+This is an automated blacklist by Halal Bot.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            `);
         }
     }
 
@@ -153,16 +187,33 @@ client.on('messageCreate', async (message) => {
 
         await user.roles.add(blacklistRoleId);
         message.reply(`${user} has been successfully blacklisted.`);
-        await user.send(`You have been blacklisted from ${message.guild.name}.\nReason: ${reason}`);
+        await user.send(`
+━━━━━━━〔 BLACKLIST NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: ${reason}
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Blacklist ID: #BLACKLIST-5824
+This is an automated blacklist by Halal Bot.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `);
     }
 
     if (command === '?whitelist') {
         const user = message.mentions.members.first();
-        if (!user) return message.reply('Usage: `?whitelist @user`');
+        const reason = args.slice(1).join(' ') || 'No reason provided.';
+        if (!user) return message.reply('Usage: `?whitelist @user reason`');
 
         await user.roles.remove(blacklistRoleId);
         message.reply(`${user} has been successfully whitelisted.`);
-        await user.send(`You have been whitelisted and are no longer blacklisted in ${message.guild.name}.`);
+        await user.send(`
+━━━━━━━〔 WHITELIST NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: ${reason}
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Whitelist ID: #WHITELIST-5825
+You have been whitelisted and are no longer blacklisted in ${message.guild.name}.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `);
     }
 
     if (command === '?mute') {
@@ -176,7 +227,16 @@ client.on('messageCreate', async (message) => {
 
         await user.roles.add(mutedRoleId);
         message.reply(`${user} has been muted. Expected unmute: <t:${Math.floor((Date.now() + duration) / 1000)}:F>`);
-        await user.send(`You have been muted in ${message.guild.name}.\nReason: ${reason}\nMute ends: <t:${Math.floor((Date.now() + duration) / 1000)}:F>`);
+        await user.send(`
+━━━━━━━〔 MUTE NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: ${reason}
+Mute Ends: <t:${Math.floor((Date.now() + duration) / 1000)}:F>
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Mute ID: #MUTE-5826
+This is an automated mute by Halal Bot.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `);
 
         setTimeout(async () => {
             if (user.roles.cache.has(mutedRoleId)) {
@@ -192,8 +252,16 @@ client.on('messageCreate', async (message) => {
 
         await user.roles.remove(mutedRoleId);
         message.reply(`${user} has been successfully unmuted.`);
-        await user.send(`You have been unmuted in ${message.guild.name}.`);
+        await user.send(`
+━━━━━━━〔 UNMUTE NOTICE 〕━━━━━━━
+Server: ${message.guild.name}
+Reason: Unmuted by moderator
+Moderator: ${message.author.tag} (ID: ${message.author.id})
+Unmute ID: #UNMUTE-5827
+You have been unmuted in ${message.guild.name}.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `);
     }
 });
 
-client.login(process.env.BOT_TOKEN);
+client.login(process.env.BOT_TOKEN)
