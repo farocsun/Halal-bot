@@ -79,8 +79,46 @@ client.on('messageCreate', async (message) => {
         userWarns.push({ reason, moderator: message.author.tag, modId: message.author.id, date: new Date() });
         warns.set(user.id, userWarns);
 
-        await message.reply(`${user} has been warned.`);
-        await user.send(`You have been warned in ${message.guild.name} for: ${reason}`);
+        const warnCount = userWarns.length;
+
+        await message.reply(`${user} has been warned. Total warns: ${warnCount}`);
+        await user.send(`You have been warned in ${message.guild.name} for: ${reason}\nTotal warnings: ${warnCount}`);
+
+        // Punishment system based on warns
+        if (warnCount === 1) {
+            await message.channel.send(`⚠️ ${user} has received their **first warning**. Please follow the rules.`);
+        } else if (warnCount === 2) {
+            await user.roles.add(mutedRoleId);
+            await message.channel.send(`⚠️ ${user} now has **2 warnings** and has been muted for **30 minutes**.`);
+            await user.send(`You have been muted for 30 minutes due to accumulating 2 warnings.`);
+            setTimeout(async () => {
+                if (user.roles.cache.has(mutedRoleId)) {
+                    await user.roles.remove(mutedRoleId).catch(() => {});
+                    await user.send(`You have been automatically unmuted in ${message.guild.name}.`).catch(() => {});
+                }
+            }, ms('30m'));
+        } else if (warnCount === 3) {
+            await user.roles.add(mutedRoleId);
+            await message.channel.send(`⚠️ ${user} now has **3 warnings** and has been muted for **1 hour**. Messages may be cleaned up.`);
+            await user.send(`You have been muted for 1 hour due to accumulating 3 warnings.`);
+            setTimeout(async () => {
+                if (user.roles.cache.has(mutedRoleId)) {
+                    await user.roles.remove(mutedRoleId).catch(() => {});
+                    await user.send(`You have been automatically unmuted in ${message.guild.name}.`).catch(() => {});
+                }
+            }, ms('1h'));
+        } else if (warnCount === 4) {
+            await user.kick('4 warnings reached - Kicked by bot');
+            await message.channel.send(`⚠️ ${user.user.tag} has been kicked from the server after receiving 4 warnings.`);
+        } else if (warnCount === 5) {
+            await user.ban({ reason: '5 warnings reached - Banned by bot' });
+            await message.channel.send(`⚠️ ${user.user.tag} has been permanently banned after receiving 5 warnings.`);
+        } else if (warnCount >= 6) {
+            // Additional punishment: Blacklist/IP Ban simulation
+            await user.roles.add(blacklistRoleId);
+            await message.channel.send(`⚠️ ${user.user.tag} has been blacklisted due to 6 or more warnings.`);
+            await user.send(`You have been blacklisted in ${message.guild.name} due to repeated offenses.`);
+        }
     }
 
     if (command === '?warns') {
