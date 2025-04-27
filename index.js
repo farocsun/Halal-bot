@@ -1,6 +1,17 @@
 const { Client, GatewayIntentBits, Partials, EmbedBuilder } = require('discord.js');
 const dotenv = require('dotenv');
 dotenv.config();
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Bot is Alive!');
+});
+
+app.listen(port, () => {
+  console.log(`Web server is running on port ${port}`);
+});
 
 const client = new Client({
     intents: [
