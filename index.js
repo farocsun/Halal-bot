@@ -31,7 +31,16 @@ const mutedRoleId = '1361533033261432875';
 
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
+
+  // Internal keep-alive trigger
+  setInterval(() => {
+    fakeCommandHandler();
+  }, 14 * 60 * 1000); // Every 14 minutes
 });
+
+function fakeCommandHandler() {
+  console.log(`[${new Date().toISOString()}] Keep-alive ping triggered internally.`);
+}
 
 function ms(input) {
   const match = input.match(/^(\d+)(m|h|d|w|y)$/);
@@ -39,18 +48,12 @@ function ms(input) {
   const num = parseInt(match[1]);
   const unit = match[2];
   switch (unit) {
-    case 'm':
-      return num * 60 * 1000;
-    case 'h':
-      return num * 60 * 60 * 1000;
-    case 'd':
-      return num * 24 * 60 * 60 * 1000;
-    case 'w':
-      return num * 7 * 24 * 60 * 60 * 1000;
-    case 'y':
-      return num * 365 * 24 * 60 * 60 * 1000;
-    default:
-      return null;
+    case 'm': return num * 60 * 1000;
+    case 'h': return num * 60 * 60 * 1000;
+    case 'd': return num * 24 * 60 * 60 * 1000;
+    case 'w': return num * 7 * 24 * 60 * 60 * 1000;
+    case 'y': return num * 365 * 24 * 60 * 60 * 1000;
+    default: return null;
   }
 }
 
@@ -62,7 +65,6 @@ client.on('messageCreate', async (message) => {
   const args = message.content.trim().split(/ +/g);
   const command = args.shift().toLowerCase();
 
-  // Check if the executor has higher role than the target user
   function hasHigherRole(targetUser) {
     return message.member.roles.highest.position > targetUser.roles.highest.position;
   }
@@ -86,7 +88,6 @@ client.on('messageCreate', async (message) => {
     const reason = args.slice(1).join(' ') || 'No reason provided.';
     if (!user) return message.reply('Usage: `?warn @user reason`');
 
-    // Role check
     if (!hasHigherRole(user)) {
       return message.reply('You cannot warn someone with a higher or equal role.');
     }
@@ -105,7 +106,6 @@ client.on('messageCreate', async (message) => {
     await message.reply(`${user} has been warned. Total warns: ${warnCount}`);
     await user.send(`You have been warned in ${message.guild.name} for: ${reason}\nTotal warnings: ${warnCount}`);
 
-    // Punishment system based on warns
     if (warnCount === 1) {
       await message.channel.send(`⚠️ ${user} has received their **first warning**. Please follow the rules.`);
     } else if (warnCount === 2) {
@@ -135,7 +135,6 @@ client.on('messageCreate', async (message) => {
       await user.ban({ reason: '5 warnings reached - Banned by bot' });
       await message.channel.send(`⚠️ ${user.user.tag} has been permanently banned after receiving 5 warnings.`);
     } else if (warnCount >= 6) {
-      // Additional punishment: Blacklist/IP Ban simulation
       await user.roles.add(blacklistRoleId);
       await message.channel.send(`⚠️ ${user.user.tag} has been blacklisted due to 6 or more warnings.`);
       await user.send(`You have been blacklisted in ${message.guild.name} due to repeated offenses.`);
@@ -146,12 +145,10 @@ client.on('messageCreate', async (message) => {
     const user = message.mentions.members.first();
     if (!user) return message.reply('Usage: `?warns @user`');
 
-    // Role check
     if (!hasHigherRole(user)) {
       return message.reply('You cannot view warns for someone with a higher or equal role.');
     }
 
-    // Prevent staff from checking their own warns
     if (user.id === message.author.id) {
       return message.reply('You cannot view your own warns.');
     }
@@ -160,10 +157,7 @@ client.on('messageCreate', async (message) => {
     if (userWarns.length === 0) return message.reply(`${user} has no warns.`);
 
     const warnList = userWarns
-      .map(
-        (w, i) =>
-          `**#${i + 1}**: ${w.reason} (Moderator: ${w.moderator}, Date: ${w.date.toLocaleString()})`
-      )
+      .map((w, i) => `**#${i + 1}**: ${w.reason} (Moderator: ${w.moderator}, Date: ${w.date.toLocaleString()})`)
       .join('\n');
     message.reply(`Warns for ${user}:\n${warnList}`);
   }
@@ -173,12 +167,10 @@ client.on('messageCreate', async (message) => {
     const number = parseInt(args[1]);
     if (!user || isNaN(number)) return message.reply('Usage: `?removewarn @user warnNumber`');
 
-    // Role check
     if (!hasHigherRole(user)) {
       return message.reply('You cannot remove warns from someone with a higher or equal role.');
     }
 
-    // Prevent staff from removing their own warn
     if (user.id === message.author.id) {
       return message.reply('You cannot remove your own warns.');
     }
@@ -197,7 +189,6 @@ client.on('messageCreate', async (message) => {
     const reason = args.slice(1).join(' ') || 'No reason provided.';
     if (!user) return message.reply('Usage: `?blacklist @user reason`');
 
-    // Role check
     if (!hasHigherRole(user)) {
       return message.reply('You cannot blacklist someone with a higher or equal role.');
     }
@@ -211,7 +202,6 @@ client.on('messageCreate', async (message) => {
     const user = message.mentions.members.first();
     if (!user) return message.reply('Usage: `?whitelist @user`');
 
-    // Role check
     if (!hasHigherRole(user)) {
       return message.reply('You cannot whitelist someone with a higher or equal role.');
     }
