@@ -72,13 +72,13 @@ client.on('messageCreate', async (message) => {
   if (command === '?help') {
     const helpMessage = `
 **Halal Bot Commands:**
-\`?warn @user reason\` - Warn a user
-\`?removewarn @user warnNumber\` - Remove a specific warn
-\`?warns @user\` - View a user's warns
-\`?blacklist @user reason\` - Blacklist a user
-\`?whitelist @user\` - Remove blacklist
-\`?mute @user time reason\` - Mute a user for a time
-\`?unmute @user\` - Unmute a user
+\`?warn @user reason\` - Warn a user  
+\`?removewarn @user warnNumber\` - Remove a specific warn  
+\`?warns @user\` - View a user's warns  
+\`?blacklist @user reason\` - Blacklist a user  
+\`?whitelist @user\` - Remove blacklist  
+\`?mute @user time reason\` - Mute a user for a time  
+\`?unmute @user\` - Unmute a user  
     `;
     return message.reply(helpMessage);
   }
@@ -120,7 +120,7 @@ client.on('messageCreate', async (message) => {
       }, ms('30m'));
     } else if (warnCount === 3) {
       await user.roles.add(mutedRoleId);
-      await message.channel.send(`⚠️ ${user} now has **3 warnings** and has been muted for **1 hour**. Messages may be cleaned up.`);
+      await message.channel.send(`⚠️ ${user} now has **3 warnings** and has been muted for **1 hour**.`);
       await user.send(`You have been muted for 1 hour due to accumulating 3 warnings.`);
       setTimeout(async () => {
         if (user.roles.cache.has(mutedRoleId)) {
@@ -209,6 +209,39 @@ client.on('messageCreate', async (message) => {
     await user.roles.remove(blacklistRoleId);
     message.reply(`${user} has been successfully whitelisted.`);
     await user.send(`You have been whitelisted and are no longer blacklisted in ${message.guild.name}.`);
+  }
+
+  if (command === '?mute') {
+    const user = message.mentions.members.first();
+    const time = args[1];
+    const reason = args.slice(2).join(' ') || 'No reason provided.';
+
+    if (!user || !time) return message.reply('Usage: `?mute @user time reason` (e.g., `?mute @User 10m spamming`)');
+    if (!hasHigherRole(user)) return message.reply('You cannot mute someone with a higher or equal role.');
+
+    const duration = ms(time);
+    if (!duration) return message.reply('Invalid time format. Use `10m`, `1h`, `2d`, etc.');
+
+    await user.roles.add(mutedRoleId);
+    await message.reply(`${user} has been muted for ${time}.`);
+    await user.send(`You have been muted in ${message.guild.name} for: ${reason}\nDuration: ${time}`).catch(() => {});
+
+    setTimeout(async () => {
+      if (user.roles.cache.has(mutedRoleId)) {
+        await user.roles.remove(mutedRoleId).catch(() => {});
+        await user.send(`You have been automatically unmuted in ${message.guild.name}.`).catch(() => {});
+      }
+    }, duration);
+  }
+
+  if (command === '?unmute') {
+    const user = message.mentions.members.first();
+    if (!user) return message.reply('Usage: `?unmute @user`');
+    if (!hasHigherRole(user)) return message.reply('You cannot unmute someone with a higher or equal role.');
+
+    await user.roles.remove(mutedRoleId);
+    await message.reply(`${user} has been unmuted.`);
+    await user.send(`You have been unmuted in ${message.guild.name}.`).catch(() => {});
   }
 });
 
